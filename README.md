@@ -23,3 +23,11 @@ See [`PROTOCOL.md`](PROTOCOL.md) for the package contract. The raw-file layout
 is an **experimental transport fixture**, not a final production transport
 decision. Git files and GitHub Releases can be changed independently of the
 Feed protocol.
+
+Every pull request is checked by the repository's read-only, standard-library
+validator. It verifies package bytes and continuity without secrets and never
+executes payload content:
+
+```bash
+python scripts/validate_feed.py .
+```
