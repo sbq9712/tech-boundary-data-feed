@@ -22,5 +22,11 @@ Payload lines use one of two operations:
 - `delete`: includes no record data, sets `tombstone: true`, and may carry a
   stable `baseline_record_id` so a consumer can suppress an older baseline.
 
+The public record is structurally allowlisted, including nested objects. In
+experimental/v0, `parameters` must be empty and `provenance` may contain only a
+string `content` field. Once a `baseline_record_id` is established for a stable
+identity, later revisions must preserve it. Contract changes require matching
+compatibility fixtures rather than accepting arbitrary nested metadata.
+
 The protocol is independent of transport. Files in this repository are exposed
 through an experimental raw-file layout only to support deterministic tests.

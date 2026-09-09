@@ -7,7 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.validate_feed import ValidationError, validate_repository
+from scripts.validate_feed import (
+    PUBLIC_FIELDS, ValidationError, canonical_bytes, sha256, validate_repository,
+)
 
 
 REPOSITORY = Path(__file__).parents[1]
@@ -92,6 +94,46 @@ class ValidatorTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValidationError, "secret-like"):
             validate_repository(root2)
+
+    def test_nested_allowlist_and_text_limit_are_fail_closed(self):
+        temporary, root = self.copy_repository()
+        self.addCleanup(temporary.cleanup)
+        self.mutate_payload_and_reseal_manifest(
+            root, lambda record: record["parameters"].update(access_token="hidden")
+        )
+        with self.assertRaisesRegex(ValidationError, "unapproved public fields at parameters"):
+            validate_repository(root)
+
+        temporary2, root2 = self.copy_repository()
+        self.addCleanup(temporary2.cleanup)
+        self.mutate_payload_and_reseal_manifest(
+            root2, lambda record: record.update(summary="x" * 2_000_001)
+        )
+        with self.assertRaisesRegex(ValidationError, "bounded string"):
+            validate_repository(root2)
+
+    def test_baseline_identity_is_stable_across_batches(self):
+        temporary, root = self.copy_repository()
+        self.addCleanup(temporary.cleanup)
+        payload_path = root / FEED_PATH / "batch-synthetic-002.jsonl"
+        operations = [json.loads(line) for line in payload_path.read_text().splitlines()]
+        operation = next(item for item in operations if item["record_id"] == "A")
+        operation.pop("baseline_record_id")
+        operation["record"].pop("baseline_record_id")
+        projected = {key: operation["record"].get(key) for key in sorted(PUBLIC_FIELDS)}
+        operation["content_sha256"] = sha256(canonical_bytes(projected))
+        payload = b"".join(
+            json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+            for item in operations
+        )
+        payload_path.write_bytes(payload)
+        manifest_path = root / FEED_PATH / "manifest-synthetic-002.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["payload_bytes"] = len(payload)
+        manifest["payload_sha256"] = hashlib.sha256(payload).hexdigest()
+        manifest_path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValidationError, "baseline_record_id changed or disappeared"):
+            validate_repository(root)
 
 
 if __name__ == "__main__":

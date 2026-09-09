@@ -16,6 +16,7 @@ SCHEMA_VERSION = "experimental/v0"
 MAX_MANIFEST_BYTES = 256 * 1024
 MAX_PAYLOAD_BYTES = 32 * 1024 * 1024
 MAX_RECORDS = 100_000
+MAX_TEXT_CHARS = 2_000_000
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$")
 FILENAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -35,6 +36,8 @@ PUBLIC_FIELDS = {
     "topics", "summary", "score", "parameters", "provenance",
     "baseline_record_id",
 }
+ALLOWED_PARAMETER_FIELDS: frozenset[str] = frozenset()
+ALLOWED_PROVENANCE_FIELDS = frozenset({"content"})
 FORBIDDEN_FIELDS = {
     "comment", "reviewer_comment", "internal_analysis", "created_by",
     "last_modified_by", "user_id", "password", "token", "secret",
@@ -129,6 +132,8 @@ def validate_record(raw: Any) -> dict[str, Any]:
     for field in ("title", "content", "source_name"):
         if not isinstance(raw.get(field), str) or not raw[field].strip():
             raise ValidationError(f"{field} is required")
+        if len(raw[field]) > MAX_TEXT_CHARS:
+            raise ValidationError(f"{field} is too large")
     source_url = raw.get("source_url")
     if source_url is not None and (
         not isinstance(source_url, str) or not source_url.startswith(("https://", "http://"))
@@ -141,8 +146,25 @@ def validate_record(raw: Any) -> dict[str, Any]:
         if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
             raise ValidationError(f"{field} must be a string list")
     for field in ("parameters", "provenance"):
-        if not isinstance(raw.get(field, {}), dict):
+        value = raw.get(field, {})
+        if not isinstance(value, dict):
             raise ValidationError(f"{field} must be an object")
+        allowed_nested = (
+            ALLOWED_PARAMETER_FIELDS if field == "parameters" else ALLOWED_PROVENANCE_FIELDS
+        )
+        unknown_nested = set(value) - allowed_nested
+        if unknown_nested:
+            raise ValidationError(f"unapproved public fields at {field}: {sorted(unknown_nested)}")
+    summary = raw.get("summary")
+    if summary is not None and (
+        not isinstance(summary, str) or len(summary) > MAX_TEXT_CHARS
+    ):
+        raise ValidationError("summary must be a bounded string")
+    score = raw.get("score")
+    if score is not None and (
+        not isinstance(score, (int, float)) or isinstance(score, bool)
+    ):
+        raise ValidationError("score must be numeric")
     if raw.get("baseline_record_id") is not None:
         require_id("baseline_record_id", raw["baseline_record_id"])
     return raw
@@ -285,6 +307,7 @@ def validate_repository(root: Path | str) -> dict[str, int]:
         cursor = 0
         previous_batch = None
         revisions: dict[tuple[str, str], int] = {}
+        baselines: dict[tuple[str, str], str] = {}
         seen_batch_ids = set()
         for manifest, operations in batches:
             if manifest["batch_id"] in seen_batch_ids:
@@ -298,6 +321,19 @@ def validate_repository(root: Path | str) -> dict[str, int]:
                 prior = revisions.get(key, 0)
                 if operation["revision"] <= prior:
                     raise ValidationError(f"non-monotonic revision for {key}")
+                incoming_baseline = operation.get("baseline_record_id")
+                if operation["operation"] == "upsert":
+                    incoming_baseline = operation["record"].get("baseline_record_id")
+                    if key in baselines and incoming_baseline != baselines[key]:
+                        raise ValidationError(f"baseline_record_id changed or disappeared for {key}")
+                elif (
+                    key in baselines
+                    and incoming_baseline is not None
+                    and incoming_baseline != baselines[key]
+                ):
+                    raise ValidationError(f"baseline_record_id changed for {key}")
+                if incoming_baseline is not None:
+                    baselines[key] = incoming_baseline
                 revisions[key] = operation["revision"]
             seen_batch_ids.add(manifest["batch_id"])
             previous_batch = manifest["batch_id"]
