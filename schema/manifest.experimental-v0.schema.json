@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sbq9712/tech-boundary-data-feed/schema/manifest.experimental-v0.schema.json",
+  "title": "Tech Boundary experimental/v0 Feed manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "feed_id",
+    "generation",
+    "batch_id",
+    "from_version",
+    "to_version",
+    "generated_at",
+    "record_count",
+    "payload_path",
+    "payload_bytes",
+    "payload_sha256",
+    "depends_on_batch_id",
+    "min_consumer_version"
+  ],
+  "properties": {
+    "schema_version": {"const": "experimental/v0"},
+    "feed_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "generation": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "batch_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "from_version": {"type": "integer", "minimum": 0},
+    "to_version": {"type": "integer", "minimum": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "record_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+    "payload_path": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$"},
+    "payload_bytes": {"type": "integer", "minimum": 0, "maximum": 33554432},
+    "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "depends_on_batch_id": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"}
+      ]
+    },
+    "min_consumer_version": {"type": "string"}
+  }
+}
