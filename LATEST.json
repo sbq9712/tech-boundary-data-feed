@@ -1,0 +1,18 @@
+{
+  "schema": "tech-boundary-feed-index/v1",
+  "generator": "feed-pkg/v1",
+  "packages": [
+    {
+      "date": "2026-09-25",
+      "record_count": 388,
+      "package_sha256": "a34606089b83ffbcf265bd60d3d1b584c3161544e0f4eb6ed2bfd923a66edebf"
+    },
+    {
+      "date": "2026-09-26",
+      "record_count": 96,
+      "package_sha256": "f719fdd7d283fd395d4bdafaa0a211e03d70a71bc85adfde44069228113ae47e"
+    }
+  ],
+  "updated_at": "2026-09-28T00:06:14.265543+08:00",
+  "latest_date": "2026-09-26"
+}
