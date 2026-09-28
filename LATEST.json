@@ -1,6 +1,6 @@
 {
   "schema": "tech-boundary-feed-index/v1",
-  "generator": "feed-pkg/v1",
+  "generator": "feed-pkg/v2",
   "packages": [
     {
       "date": "2026-09-25",
@@ -16,8 +16,19 @@
       "date": "2026-09-27",
       "record_count": 1,
       "package_sha256": "d18978b0f08894d31d371668b1870f3b00079971294dc03691331637f68566e8"
+    },
+    {
+      "date": "2026-09-29",
+      "file": "2026-09-29.zip",
+      "mode": "changes",
+      "record_count": 68137,
+      "change_count": 68137,
+      "added": 68137,
+      "updated": 0,
+      "deleted": 0,
+      "package_sha256": "fe0e32cbffd6ba519a215cdd913ba40a5c033aaef9496cb38f603063e14ff7b4"
     }
   ],
-  "updated_at": "2026-09-28T09:36:05.056951+08:00",
-  "latest_date": "2026-09-27"
+  "updated_at": "2026-09-29T05:11:44.730921+08:00",
+  "latest_date": "2026-09-29"
 }
