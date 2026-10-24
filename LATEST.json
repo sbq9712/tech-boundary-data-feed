@@ -269,8 +269,19 @@
       "updated": 110,
       "deleted": 3,
       "package_sha256": "55f6725edf61d79394d43e602cea404eaa7ab91ddfdb47bba2e3f14499d41dfa"
+    },
+    {
+      "date": "2026-10-25",
+      "file": "2026-10-25.zip",
+      "mode": "changes",
+      "record_count": 1060,
+      "change_count": 1060,
+      "added": 947,
+      "updated": 113,
+      "deleted": 0,
+      "package_sha256": "c82149beaf2f874ca7ccfc24b343bb036cf450a299a1011c18549c2f0b19552c"
     }
   ],
-  "updated_at": "2026-10-24T05:04:17.818773+08:00",
-  "latest_date": "2026-10-24"
+  "updated_at": "2026-10-25T05:05:19.207511+08:00",
+  "latest_date": "2026-10-25"
 }
